@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <title>Enregistrement de présence - Kiosksign</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/1.5.3/signature_pad.min.js"></script>
+    <style>
+      body {
+        background-color: #f5f7fa;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .container {
+        background-color: #fff;
+        padding: 20px 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        width: 90%;
+        max-width: 600px;
+      }
+      h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 5px;
+      }
+      p.intro {
+        text-align: center;
+        color: #555;
+        margin-bottom: 20px;
+      }
+      .form-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .form-row label {
+        width: 120px;
+        margin-right: 10px;
+        font-weight: bold;
+        color: #555;
+      }
+      .form-row input, .form-row select, .form-row textarea {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+      .action-btn {
+        width: 100%;
+        padding: 15px;
+        font-size: 18px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 20px;
+      }
+      .login-btn {
+        background-color: #007BFF;
+        color: #fff;
+      }
+      .logout-btn {
+        background-color: #FF8C00;
+        color: #fff;
+      }
+      .info-box {
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        color: #333;
+        text-align: center;
+      }
+      .error-box {
+        border: 1px solid #f5c6cb;
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        text-align: center;
+        display: none;
+      }
+      .alert-box {
+        border: 1px solid #ffe066;
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        text-align: center;
+        display: none;
+      }
+      #signature-pad {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 5px;
+        margin-top: 10px;
+        display: block;
+      }
+      #signature-pad::before {
+        content: "Signature : utilisez la souris ou le doigt";
+        display: block;
+        color: #aaa;
+        text-align: center;
+        margin-bottom: 5px;
+      }
+      #timer {
+        font-size: 16px;
+        text-align: center;
+        margin-top: 10px;
+        color: #333;
+      }
+      .small-text {
+        font-size: 12px;
+      }
+      .btn-row {
+        display: flex;
+        gap: 10px;
+      }
+      @media (max-width: 480px) {
+        .form-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .form-row label {
+          width: 100%;
+          margin-bottom: 5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container" id="formContainer">
+      <h2>Enregistrement de présence Collaborateur</h2>
+      <p class="intro">
+        Veuillez remplir le formulaire ci-dessous pour enregistrer votre présence.<br>
+        Connectez-vous ou déconnectez-vous via votre adresse e-mail IFFP (automatiquement récupérée).
+      </p>
+      <div class="form-row">
+        <label for="userEmail">Email :</label>
+        <input type="email" id="userEmail" value="<?= userEmail ?>" disabled>
+        <button type="button" id="editFields"><i class="fas fa-pencil-alt"></i> Modifier</button>
+      </div>
+      <div class="form-row">
+        <label for="firstName">Prénom :</label>
+        <input type="text" id="firstName" value="<?= firstName ?>" disabled>
+      </div>
+      <div class="form-row">
+        <label for="lastName">Nom :</label>
+        <input type="text" id="lastName" value="<?= lastName ?>" disabled>
+      </div>
+      <div class="form-row">
+        <label for="location">Localisation :</label>
+        <select id="location">
+          <option value="Nanterre Pesaro" <?= location === "Nanterre Pesaro" ? "selected" : "" ?>>Nanterre Pesaro</option>
+          <option value="Spaces La Défense" <?= location === "Spaces La Défense" ? "selected" : "" ?>>Spaces La Défense</option>
+          <option value="Télétravail" <?= location === "Télétravail" ? "selected" : "" ?>>Télétravail</option>
+          <option value="Autre" <?= location === "Autre" ? "selected" : "" ?>>Autre</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="remarks">Remarques :</label>
+        <textarea id="remarks" rows="2" placeholder="Aucune"><?= remarks || "" ?></textarea>
+      </div>
+      <? if (existingEntry && signatureURL && signatureURL !== "") { ?>
+        <div class="info-box" style="background-color: #ffebee; border:1px solid #ffcdd2;">
+          <div style="font-weight:bold; font-size:18px;">
+            <i class="fas fa-times" style="color:red;"></i> Erreur <i class="fas fa-times" style="color:red;"></i>
+          </div>
+          <p>Votre présence a déjà été enregistrée sur <?= location ?></p>
+          <p>pour le <strong><?= formattedDate ?></strong> de <strong><?= formatTimeStr(loginTime) ?></strong> à <strong><?= formatTimeStr(logoutTime) ?></strong>.</p>
+          <p>Adresse IP : <?= ip ? ip : "Non détectée" ?></p>
+          <p>Pour toute erreur ou modification, vous pouvez faire un email explicatif à <a href="mailto:rh@iffp.school">rh@iffp.school</a> (avec une impression écran)</p>
+          <p style="font-weight:bold; font-size:14px;">MERCI et EXCELLENTE JOURNÉE</p>
+        </div>
+        <? if (location === "Nanterre Pesaro" && ip !== "83.118.196.38") { ?>
+          <div class="info-box" style="background-color: #ffebee; border:1px solid #ffcdd2; font-size:12px;">
+            Votre adresse IP (<?= ip ?>) n'est pas détectée au sein de l'IFFP.<br>
+            Connectez-vous bien au WIFI IFFP la prochaine fois.
+          </div>
+        <? } ?>
+      <? } else if (existingEntry) { ?>
+        <div class="info-box" id="statusMessage" style="background-color: #ffe0b2;">
+          <div style="font-weight:bold; font-size:18px;">
+            Connexion en cours <i class="fas fa-clock"></i>
+          </div>
+          <p>Votre connexion a démarré à <?= formatTimeStr(loginTime) ?>.</p>
+          <p>Votre adresse IP actuelle : <span id="ipDisplay"></span></p>
+          <div id="ipWarning" style="font-size:12px; border:1px solid #ffcdd2; background-color:#ffebee; padding:5px; border-radius:4px; margin-top:5px; display:none;"></div>
+          <p>Temps écoulé depuis votre connexion : <span id="timer" style="font-weight:bold;">0h 0m</span></p>
+          <div id="alertOneHour" class="alert-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            Vous ne pouvez pas vous déconnecter avant 1h de connexion.
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="signature">Signature :</label>
+          <canvas id="signature-pad" width="400" height="200"></canvas>
+        </div>
+        <div class="btn-row">
+          <button type="button" id="clearSignature" class="action-btn" style="background-color:#999; color:#fff;">
+            <i class="fas fa-eraser"></i> Effacer la signature
+          </button>
+          <button id="logoutBtn" class="action-btn logout-btn" onclick="logOut()">
+            <i class="fas fa-sign-out-alt"></i> Se déconnecter
+          </button>
+        </div>
+      <? } else { ?>
+        <div class="info-box" id="statusMessage" style="background-color: #e0f7fa;">
+          <div style="font-weight:bold; font-size:18px;">
+            Aucun LOGIN détecté <i class="fas fa-check" style="color:green;"></i>
+          </div>
+          <p>Vous pouvez vous connecter.</p>
+          <p>Votre LOGIN sera fait depuis l'IP : <span id="ipDisplay"></span></p>
+        </div>
+        <button id="loginBtn" class="action-btn login-btn" onclick="logIn()">
+          <i class="fas fa-sign-in-alt"></i> Se connecter
+        </button>
+      <? } ?>
+      <div id="errorMessage" class="error-box"></div>
+    </div>
+    <script>
+      let userIP = '';
+      let signaturePad;
+      let timerInterval;
+      let loginStartDate = null;
+
+      function initSignaturePad() {
+        const canvas = document.getElementById('signature-pad');
+        if (canvas) {
+          signaturePad = new SignaturePad(canvas);
+          const clearBtn = document.getElementById("clearSignature");
+          if (clearBtn) clearBtn.addEventListener("click", () => { signaturePad.clear(); });
+        }
+      }
+      window.onload = initSignaturePad;
+
+      document.getElementById("editFields").addEventListener("click", () => {
+        document.getElementById("userEmail").disabled = false;
+        document.getElementById("firstName").disabled = false;
+        document.getElementById("lastName").disabled = false;
+      });
+
+      function displayError(msg) {
+        const errorDiv = document.getElementById('errorMessage');
+        if (msg) {
+          errorDiv.innerText = msg;
+          errorDiv.style.display = 'block';
+        } else {
+          errorDiv.innerText = '';
+          errorDiv.style.display = 'none';
+        }
+      }
+
+      fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+          userIP = data.ip;
+          document.getElementById('ipDisplay').innerText = userIP;
+          checkIPAccess();
+        })
+        .catch(() => {
+          document.getElementById('ipDisplay').innerText = "Non détectée";
+        });
+
+      function checkIPAccess() {
+        const locationSelect = document.getElementById("location");
+        const remarks = document.getElementById("remarks");
+        const loginBtn = document.getElementById("loginBtn");
+        const expectedIP = "193.248.49.107";
+        let blockMsg = '';
+        if (!loginBtn) return;
+        if (locationSelect.value === "Nanterre Pesaro") {
+          if (userIP !== expectedIP) {
+            loginBtn.disabled = true;
+            blockMsg = "Vous n'êtes pas à Nanterre Pesaro : accès bloqué (connectez-vous via le WIFI IFFP).";
+            displayError(blockMsg);
+          } else {
+            loginBtn.disabled = false;
+            displayError('');
+          }
+        } else {
+          if (!remarks.value.trim() && userIP !== expectedIP) {
+            loginBtn.disabled = true;
+            displayError("Merci de préciser une remarque pour justifier votre localisation.");
+          } else {
+            loginBtn.disabled = false;
+            displayError('');
+          }
+        }
+      }
+
+      document.getElementById("location").addEventListener("change", checkIPAccess);
+      document.getElementById("remarks").addEventListener("input", checkIPAccess);
+
+      <? if (existingEntry && !signatureURL) { ?>
+        function startTimer(startTimeStr) {
+          const parts = startTimeStr.split(':');
+          const hrs = parseInt(parts[0]) || 0;
+          const mins = parseInt(parts[1]) || 0;
+          const secs = parts.length > 2 ? parseInt(parts[2]) || 0 : 0;
+          loginStartDate = new Date();
+          loginStartDate.setHours(hrs, mins, secs, 0);
+          timerInterval = setInterval(() => {
+            const now = new Date();
+            const diff = now - loginStartDate;
+            const elapsedHrs = Math.floor(diff / 3600000);
+            const elapsedMins = Math.floor((diff % 3600000) / 60000);
+            document.getElementById('timer').innerText = `${elapsedHrs}h ${elapsedMins}m`;
+            const alertOneHour = document.getElementById('alertOneHour');
+            if (alertOneHour) {
+              alertOneHour.style.display = ((elapsedHrs * 60 + elapsedMins) < 0) ? "block" : "none";
+            }
+          }, 1000);
+        }
+        startTimer("<?= loginTime ?>");
+      <? } ?>
+
+      function logIn() {
+        displayError('');
+        const loginBtn = document.getElementById('loginBtn');
+        if (loginBtn) {
+          loginBtn.disabled = true;
+          loginBtn.style.backgroundColor = '#66b3ff';
+          loginBtn.innerText = 'En cours...';
+        }
+
+        const email = document.getElementById('userEmail').value.trim();
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const locationVal = document.getElementById('location').value;
+        const remarks = document.getElementById('remarks').value.trim();
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            updateStatus(response);
+            google.script.run.traiterPresences();
+          })
+          .withFailureHandler(function(error) {
+            displayError(error.message || "Une erreur s'est produite.");
+            if (loginBtn) {
+              loginBtn.disabled = false;
+              loginBtn.style.backgroundColor = '#007BFF';
+              loginBtn.innerText = 'Se connecter';
+            }
+          })
+          .logUser('in', '', userIP, email, firstName, lastName, "", locationVal, remarks);
+      }
+
+      function logOut() {
+        const timerText = document.getElementById('timer') ? document.getElementById('timer').innerText : "";
+        if (timerText) {
+          const match = timerText.match(/(\d+)h\s+(\d+)m/);
+          if (match) {
+            const hours = parseInt(match[1]);
+            const minutes = parseInt(match[2]);
+            if ((hours * 60 + minutes) < 0) {
+              displayError('Vous devez rester connecté au moins 1h avant de pouvoir vous déconnecter.');
+              const alertOneHour = document.getElementById('alertOneHour');
+              if(alertOneHour) alertOneHour.style.display = "block";
+              return;
+            }
+          }
+        }
+        displayError('');
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+          logoutBtn.disabled = true;
+          logoutBtn.style.backgroundColor = '#ffbb80';
+          logoutBtn.innerText = 'En cours...';
+        }
+        if (!signaturePad || signaturePad.isEmpty()) {
+          displayError('Veuillez signer avant de vous déconnecter.');
+          if (logoutBtn) {
+            logoutBtn.disabled = false;
+            logoutBtn.style.backgroundColor = '#FF8C00';
+            logoutBtn.innerText = 'Se déconnecter';
+          }
+          return;
+        }
+        const signature = signaturePad.toDataURL();
+        const email = document.getElementById('userEmail').value.trim();
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const locationVal = document.getElementById('location').value;
+        const remarks = document.getElementById('remarks').value.trim();
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            updateStatus(response);
+            google.script.run.traiterPresences();
+          })
+          .withFailureHandler(function(error) {
+            displayError(error.message || "Une erreur s'est produite.");
+            if (logoutBtn) {
+              logoutBtn.disabled = false;
+              logoutBtn.style.backgroundColor = '#FF8C00';
+              logoutBtn.innerText = 'Se déconnecter';
+            }
+          })
+          .logUser('out', signature, userIP, email, firstName, lastName, "", locationVal, remarks);
+      }
+
+      function updateStatus(response) {
+        if (timerInterval) clearInterval(timerInterval);
+        let htmlMessage = "";
+        if (response.loggedIn) {
+          htmlMessage = `
+            <div class="info-box" style="background-color: #e0ffe0;">
+              <div style="font-weight:bold; font-size:18px;">Connexion en cours <i class="fas fa-clock"></i></div>
+              <p>Votre connexion a démarré à ${response.confirmation.loginTime || ""}.</p>
+              <p>Votre adresse IP actuelle : ${response.confirmation.ip}</p>
+              <p>Temps écoulé depuis votre connexion : <span id="timer" style="font-weight:bold;">0h 0m</span></p>
+            </div>
+          `;
+        } else {
+          htmlMessage = `
+            <div class="info-box" style="background-color: #e0ffe0; border:1px solid #b2fab4;">
+              <div style="font-weight:bold; font-size:18px;">
+                Déconnexion enregistrée
+              </div>
+              <p>Merci ${response.confirmation.firstName} ${response.confirmation.lastName} (${response.confirmation.userEmail}).</p>
+              <p>Votre présence a bien été enregistrée sur ${response.confirmation.location}<br>
+              pour le <strong>${response.confirmation.date}</strong> de <strong>${response.confirmation.loginTime || ""}</strong> à <strong>${response.confirmation.logoutTime || ""}</strong>.</p>
+              <p>Adresse IP : ${response.confirmation.ip}</p>
+              <p>Remarques : ${response.confirmation.remarks || "Aucune"}</p>
+              <p style="font-size:12px;">Pour toute erreur ou modification, vous pouvez faire un <a href="mailto:rh@iffp.school">email à rh@iffp.school</a></p>
+              <p style="font-size:12px; font-weight:bold;">MERCI et EXCELLENTE JOURNÉE</p>
+            </div>
+          `;
+        }
+        document.getElementById('formContainer').innerHTML = htmlMessage;
+      }
+    </script>
+  </body>
+</html>

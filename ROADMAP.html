@@ -1,0 +1,52 @@
+/**
+// ON suit ici les fonctionnalités à déployer.
+
+X- Import du planning de J+1 chaque jour à 20h 
+X- Vérification à 8h32 / 9h02 / 9h32/ 10h02 / 10h32 etc. si arrivée ou départ attendu, si pas de connexion ou déconnexion alors message.
+X- On rappelle le planning à la connexion.
+
+- Correction automatique des heures effectuées au 0,25 inférieurs le plus proches.
+
+
+RECAP
+// Fonctions pour afficher des récaps individuels de la veille, hebdo et mensuels.
+- On fait un récap Hebdo S-1 le Lundi matin
+- On fait un récap en fin de semaine pour chacun et un rappel du planning de S+1.
+
+// Fonctions pour afficher des récaps GLOBAUX de la veille, hebdo et mensuels.
+- Nb total de personnes présentes / absentes
+- Nb total d'heures réalisées / nb heures planifiées.
+
+*/
+
+
+
+---------------------------
+---------------------------
+
+J'aimerais avoir un script d'import de planning qui va chercher le planning du mois courant dans ce fichier : 
+
+Il le copie dans un onglet du fichier courant.
+Il rappelle ensuite à chaque collaborateur son horaire du lendemain tous les soirs à 17h.
+On crée ou on met à jour l'onglet "Cloture MMYY" avec le nombre d'heures planifiées et le nb d'heures réalisées pour chaque personne.
+
+id  Prénom	NOM	NOM Complet	Email	Nb H Plan JJMM	Nb H Real JJMM	Nb H TT Plan Mois	Nb H TT Real Mois Nb H AJ Mois	Nb H AI Mois	Nb H Formation Mois Nb H Congés Mois	Ecart Mois	Remarques
+
+RECAPS DU JOUR.
+Si un collaborateur est planifié en absent, en congé ou en formation, Il note une ligne avec absent, formation ou congé pour lui à la date du jour.
+Si un collaborateur devait être présent pour ce jour là et qu'aucune connexion n'est trouvée, il note une ligne pour ce collaborateur en mettant ABSENCE À VÉRIFIER.
+
+*Calculs*
+On met à jour automatiquement le nb d'absences, le nb d'heures de formation
+On envoie le récap des heures en fin de semaine au collaborateur
+On envoie un récap des présences et absences de la veille au service RH
+On fait un recap perso fin de mois.
+On envoie un récap Comptable et éléments de paie en fin de mois 20h.
+On demande un relevé d'absences à l'école en fin de mois si alternant.
+
+
+
+
+
+
+
